@@ -1,0 +1,168 @@
+type Timestamp = int;
+type SupplyNetworkGraph = 
+ record {
+   edgeCount: nat;
+   nodes: vec NetworkNode;
+ };
+type SupplierTier = 
+ variant {
+   Tier1;
+   Tier2;
+   Tier3;
+ };
+type SupplierProfile = 
+ record {
+   avgLeadTimeDays: nat;
+   carrierPerformanceScore: float64;
+   category: SupplierCategory;
+   compositeRisk: nat;
+   defectRate: float64;
+   delayRisk: nat;
+   dependsOn: vec SupplierId;
+   equipmentFailureRate: float64;
+   failureRisk: nat;
+   id: SupplierId;
+   location: text;
+   name: text;
+   onTimeDeliveryRate: float64;
+   qualityRisk: nat;
+   supplyInterruptionCount: nat;
+   tier: SupplierTier;
+   volumeHandled: nat;
+   yearsActive: nat;
+ };
+type SupplierMetricsUpdate = 
+ record {
+   avgLeadTimeDays: opt nat;
+   carrierPerformanceScore: opt float64;
+   defectRate: opt float64;
+   equipmentFailureRate: opt float64;
+   onTimeDeliveryRate: opt float64;
+   supplyInterruptionCount: opt nat;
+   volumeHandled: opt nat;
+ };
+type SupplierId = nat;
+type SupplierCategory = 
+ variant {
+   Chemicals;
+   Electronics;
+   Logistics;
+   Manufacturing;
+   Packaging;
+   RawMaterials;
+   Services;
+ };
+type RiskTrendEntry = 
+ record {
+   compositeRisk: RiskScore;
+   delayRisk: RiskScore;
+   failureRisk: RiskScore;
+   qualityRisk: RiskScore;
+   timestamp: Timestamp;
+ };
+type RiskScore = nat;
+type RiskLevel = 
+ variant {
+   High;
+   Low;
+   Medium;
+ };
+type RiskAlert = 
+ record {
+   compositeRisk: RiskScore;
+   delayRisk: RiskScore;
+   failureRisk: RiskScore;
+   qualityRisk: RiskScore;
+   riskLevel: RiskLevel;
+   supplierId: SupplierId;
+   supplierName: text;
+   triggeredAt: Timestamp;
+ };
+type PortfolioRiskSnapshot = 
+ record {
+   avgCompositeRisk: nat;
+   highRiskCount: nat;
+   lowRiskCount: nat;
+   maxRiskScore: RiskScore;
+   maxRiskSupplierId: SupplierId;
+   mediumRiskCount: nat;
+   portfolioRiskScore: nat;
+   timestamp: Timestamp;
+   totalSuppliers: nat;
+ };
+type NetworkNode = 
+ record {
+   category: SupplierCategory;
+   compositeRisk: RiskScore;
+   dependsOn: vec SupplierId;
+   supplierId: SupplierId;
+   supplierName: text;
+   tier: SupplierTier;
+ };
+type MitigationStatus = 
+ variant {
+   Cancelled;
+   Completed;
+   InProgress;
+   Open;
+ };
+type MitigationAction = 
+ record {
+   action: text;
+   createdAt: Timestamp;
+   dueDate: Timestamp;
+   id: nat;
+   status: MitigationStatus;
+   supplierId: SupplierId;
+   updatedAt: Timestamp;
+ };
+type DisruptionType = 
+ variant {
+   EquipmentFailure;
+   LogisticsDelay;
+   NaturalDisaster;
+   QualityFailure;
+   SupplyInterruption;
+ };
+type DisruptionImpact = 
+ record {
+   affectedSupplierId: SupplierId;
+   cascadingSupplierIds: vec SupplierId;
+   directRiskIncrease: nat;
+   disruptionType: DisruptionType;
+   estimatedRecoveryDays: nat;
+   portfolioRiskDelta: int;
+   severity: RiskLevel;
+ };
+type AlternativeSupplier = 
+ record {
+   avgLeadTimeDays: nat;
+   category: SupplierCategory;
+   compositeRisk: RiskScore;
+   name: text;
+   rank: nat;
+   supplierId: SupplierId;
+   tier: SupplierTier;
+ };
+service : {
+  computeDelayRisk: (supplierId: SupplierId) -> (nat) query;
+  computeFailureRisk: (supplierId: SupplierId) -> (nat) query;
+  computeQualityRisk: (supplierId: SupplierId) -> (nat) query;
+  getCompositeRisk: (supplierId: SupplierId) -> (nat) query;
+  getMitigationActions: (supplierId: SupplierId) ->
+   (vec MitigationAction) query;
+  getPortfolioRiskSnapshot: () -> (PortfolioRiskSnapshot) query;
+  getRecommendedAlternatives: (supplierId: SupplierId, category:
+   SupplierCategory) -> (vec AlternativeSupplier) query;
+  getRiskAlerts: (threshold: nat) -> (vec RiskAlert) query;
+  getSupplierProfiles: () -> (vec SupplierProfile) query;
+  getSupplierTrendHistory: (supplierId: SupplierId, days: nat) ->
+   (vec RiskTrendEntry) query;
+  getSupplyNetworkGraph: () -> (SupplyNetworkGraph) query;
+  logMitigationAction: (supplierId: SupplierId, action: text, dueDate:
+   Timestamp) -> (nat);
+  simulateDisruption: (supplierId: SupplierId, disruptionType:
+   DisruptionType) -> (DisruptionImpact) query;
+  updateSupplierMetrics: (supplierId: SupplierId, metrics:
+   SupplierMetricsUpdate) -> (bool);
+}

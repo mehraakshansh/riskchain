@@ -1,0 +1,95 @@
+// Version: 1.0.0
+type DailyRiskSnapshot__242715465 =
+  {
+    compositeRisk : RiskScore__410103471;
+    day : Nat;
+    delayRisk : RiskScore__410103471;
+    failureRisk : RiskScore__410103471;
+    qualityRisk : RiskScore__410103471;
+    timestamp : Timestamp__664012878
+  };
+type Data__791452850<K, V> =
+  {var count : Nat__490723111; kvs : [var ?(K, V)]};
+type Internal__8484328<K, V> =
+  {children : [var ?Node__46230540<K, V>]; data : Data__791452850<K, V>};
+type Leaf__809889148<K, V> = {data : Data__791452850<K, V>};
+type List__415060402<T> = List__790383201<T>;
+type List__790383201<T> =
+  {
+    var blockIndex : Nat__490723111;
+    var blocks : [var [var ?T]];
+    var elementIndex : Nat__490723111
+  };
+type MitigationActionInternal__342115503 =
+  {
+    var action : Text;
+    createdAt : Timestamp__664012878;
+    var dueDate : Timestamp__664012878;
+    id : Nat;
+    var status : MitigationStatus__794509735;
+    supplierId : SupplierId__101682251;
+    var updatedAt : Timestamp__664012878
+  };
+type MitigationStatus__460831139 =
+  {#Cancelled; #Completed; #InProgress; #Open};
+type MitigationStatus__794509735 = MitigationStatus__460831139;
+type Nat__490723111 = Nat__920180692;
+type Nat__920180692 = Nat;
+type Node__46230540<K, V> =
+  {#internal : Internal__8484328<K, V>; #leaf : Leaf__809889148<K, V>};
+type RiskScore__167301048 = Nat;
+type RiskScore__410103471 = RiskScore__167301048;
+type SupplierCategory__978528695 =
+  {
+    #Chemicals;
+    #Electronics;
+    #Logistics;
+    #Manufacturing;
+    #Packaging;
+    #RawMaterials;
+    #Services
+  };
+type SupplierId__101682251 = SupplierId__1029492484;
+type SupplierId__1029492484 = Nat;
+type SupplierId__701716487 = SupplierId__1029492484;
+type SupplierInternal__380689360 =
+  {
+    var avgLeadTimeDays : Nat;
+    var carrierPerformanceScore : Float;
+    category : SupplierCategory__978528695;
+    var defectRate : Float;
+    var dependsOn : [SupplierId__701716487];
+    var equipmentFailureRate : Float;
+    id : SupplierId__701716487;
+    location : Text;
+    name : Text;
+    var onTimeDeliveryRate : Float;
+    var supplyInterruptionCount : Nat;
+    tier : SupplierTier__235172537;
+    var volumeHandled : Nat;
+    var yearsActive : Nat
+  };
+type SupplierTier__235172537 = {#Tier1; #Tier2; #Tier3};
+type Timestamp__301639476 = Int;
+type Timestamp__664012878 = Timestamp__301639476;
+actor {
+  stable mitigationActions :
+    {
+      var blockIndex : Nat__490723111;
+      var blocks : [var [var ?MitigationActionInternal__342115503]];
+      var elementIndex : Nat__490723111
+    };
+  stable suppliers :
+    {
+      var blockIndex : Nat__490723111;
+      var blocks : [var [var ?SupplierInternal__380689360]];
+      var elementIndex : Nat__490723111
+    };
+  stable trends :
+    {
+      var root :
+        Node__46230540<SupplierId__1029492484,
+                        List__415060402<DailyRiskSnapshot__242715465>>;
+      var size : Nat__490723111
+    }
+};

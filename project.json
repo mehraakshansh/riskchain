@@ -1,0 +1,23 @@
+{
+  "overview": "A full-scale supply chain portfolio risk optimization dashboard with ML-driven risk scoring across quality, delay, and failure dimensions. Features real-time analytics, supplier management, scenario simulation, and interactive network visualization.",
+  "features": [
+    "ML-based risk engine (quality, delay, failure)",
+    "Real-time portfolio risk dashboard",
+    "Supplier directory with risk profiles and trend sparklines",
+    "Interactive supply network graph with tier visualization",
+    "Scenario simulator for disruption what-if analysis",
+    "Risk alert feed with configurable thresholds",
+    "Optimizer recommendations for alternative sourcing",
+    "Role-based access with Internet Identity login"
+  ],
+  "category": "productivity-dashboard",
+  "tags": [
+    "supply-chain",
+    "risk-management",
+    "analytics",
+    "dashboard",
+    "machine-learning",
+    "optimization"
+  ],
+  "last_updated": "2026-04-10T22:21:08.151Z"
+}

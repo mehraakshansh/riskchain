@@ -14,11 +14,7 @@ import {
   normalizeRisk,
 } from "@/lib/riskUtils";
 import { cn } from "@/lib/utils";
-import type {
-  AlternativeSupplier,
-  DisruptionType,
-  SupplierProfile,
-} from "@/types";
+import type { AlternativeSupplier, SupplierProfile } from "@/types";
 import {
   Activity,
   AlertTriangle,
@@ -41,12 +37,13 @@ type DisruptionId =
   | "EquipmentFailure"
   | "NaturalDisaster";
 
-const DISRUPTION_VARIANTS: Record<DisruptionId, DisruptionType> = {
-  SupplyInterruption: { SupplyShortage: null },
-  QualityFailure: { OperationalFailure: null },
-  LogisticsDelay: { LogisticsDisruption: null },
-  EquipmentFailure: { OperationalFailure: null },
-  NaturalDisaster: { Natural: null },
+// Disruption type keys — match backend Candid variant names exactly
+const DISRUPTION_VARIANTS: Record<DisruptionId, string> = {
+  SupplyInterruption: "SupplyInterruption",
+  QualityFailure: "QualityFailure",
+  LogisticsDelay: "LogisticsDelay",
+  EquipmentFailure: "EquipmentFailure",
+  NaturalDisaster: "NaturalDisaster",
 };
 
 interface DisruptionOption {
@@ -403,11 +400,13 @@ function AlternativesTable({
 }
 
 // ── Severity helpers ──────────────────────────────────────────────────────────
+// Severity can be backend RiskLevel ("High","Medium","Low") or fallback ("Critical","High","Medium","Low")
+// Map to 0-100 risk scale for badge coloring
 function getSeverityScore(severity: string): number {
-  if (severity === "Critical") return 0.9;
-  if (severity === "High") return 0.75;
-  if (severity === "Medium") return 0.5;
-  return 0.25;
+  if (severity === "Critical") return 90;
+  if (severity === "High") return 75;
+  if (severity === "Medium") return 55;
+  return 25;
 }
 
 function getSeverityBannerClass(severity: string): string {
@@ -418,10 +417,14 @@ function getSeverityBannerClass(severity: string): string {
 }
 
 function getSeverityIconClass(severity: string): string {
-  if (severity === "Critical") return "text-destructive";
-  if (severity === "High") return "text-warning";
+  if (severity === "Critical" || severity === "High") return "text-warning";
   if (severity === "Medium") return "text-warning";
   return "text-success";
+}
+
+function getSeverityLabel(severity: string): string {
+  // Normalize backend RiskLevel enum values to display labels
+  return severity.toUpperCase();
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -440,11 +443,13 @@ export default function Simulator() {
     simulate.mutate({
       supplierId: selectedSupplier.id,
       disruptionType: DISRUPTION_VARIANTS[selectedDisruption],
+      allSuppliers: suppliers,
     });
   }
 
   const impact = simulate.data;
   const isRunning = simulate.isPending;
+  const simError = simulate.error;
 
   const cascadingSuppliers = useMemo(() => {
     if (!impact) return [];
@@ -688,7 +693,7 @@ export default function Simulator() {
         {/* ── Right Results Panel ── */}
         <div className="bg-background overflow-y-auto min-h-0">
           {/* Empty state */}
-          {!impact && !isRunning && (
+          {!impact && !isRunning && !simError && (
             <div
               data-ocid="simulator-empty"
               className="flex flex-col items-center justify-center h-full min-h-64 gap-3 text-center"
@@ -723,6 +728,33 @@ export default function Simulator() {
             </div>
           )}
 
+          {/* Error state — should not happen with fallback, shown as safety net */}
+          {simError && !isRunning && (
+            <div
+              data-ocid="simulator-error"
+              className="flex flex-col items-center justify-center h-full min-h-64 gap-3 text-center p-6"
+            >
+              <div className="w-10 h-10 rounded-lg bg-warning/10 border border-warning/20 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-warning" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-foreground">
+                  Unable to run simulation
+                </p>
+                <p className="text-xs text-muted-foreground max-w-64">
+                  Please select a supplier and try again.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => simulate.reset()}
+                className="text-xs text-primary hover:underline font-mono mt-1"
+              >
+                Dismiss and retry
+              </button>
+            </div>
+          )}
+
           {/* Results */}
           {impact && !isRunning && (
             <div className="p-4 space-y-4">
@@ -741,7 +773,7 @@ export default function Simulator() {
                     )}
                   />
                   <span className="text-sm font-mono font-bold text-foreground">
-                    {impact.severity.toUpperCase()} SEVERITY EVENT
+                    {getSeverityLabel(impact.severity)} SEVERITY EVENT
                   </span>
                 </div>
                 <span className="text-[10px] font-mono text-muted-foreground shrink-0">
@@ -767,10 +799,10 @@ export default function Simulator() {
                   <span
                     className={cn(
                       "text-xs px-2 py-1 rounded border font-semibold font-mono shrink-0",
-                      getRiskBgColor(getSeverityScore(impact.severity) * 100),
+                      getRiskBgColor(getSeverityScore(impact.severity)),
                     )}
                   >
-                    {getRiskLabel(getSeverityScore(impact.severity) * 100)}
+                    {getRiskLabel(getSeverityScore(impact.severity))}
                   </span>
                 </div>
 

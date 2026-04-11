@@ -1,3 +1,4 @@
+import { useThresholds } from "@/context/ThresholdContext";
 import { usePortfolioSnapshot } from "@/hooks/useBackend";
 import { useRiskAlerts } from "@/hooks/useBackend";
 import { getRiskBgColor, getRiskLabel, normalizeRisk } from "@/lib/riskUtils";
@@ -8,7 +9,8 @@ import { useEffect, useState } from "react";
 
 export function Header() {
   const { data: snapshot, isFetching } = usePortfolioSnapshot();
-  const { data: alerts } = useRiskAlerts(60);
+  const { compositeThreshold } = useThresholds();
+  const { data: alerts } = useRiskAlerts(compositeThreshold);
   const queryClient = useQueryClient();
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 

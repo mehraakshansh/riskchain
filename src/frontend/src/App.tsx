@@ -1,6 +1,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Toaster } from "@/components/ui/sonner";
+import { ThresholdProvider } from "@/context/ThresholdContext";
 import {
   Outlet,
   RouterProvider,
@@ -126,5 +127,9 @@ declare module "@tanstack/react-router" {
 }
 
 export default function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <ThresholdProvider>
+      <RouterProvider router={router} />
+    </ThresholdProvider>
+  );
 }

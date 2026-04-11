@@ -504,11 +504,12 @@ export default function Suppliers() {
         if (tierFilter !== "all" && s.tier !== Number(tierFilter)) return false;
         if (riskFilter !== "all") {
           // compositeRisk is bigint on 0-100 scale from backend
+          // HIGH: >70, MID: >40 && <=70, LOW: <=40
           const score = Number(s.compositeRisk);
-          if (riskFilter === "high" && score < 70) return false;
-          if (riskFilter === "medium" && (score < 40 || score >= 70))
+          if (riskFilter === "high" && score <= 70) return false;
+          if (riskFilter === "medium" && (score <= 40 || score > 70))
             return false;
-          if (riskFilter === "low" && score >= 40) return false;
+          if (riskFilter === "low" && score > 40) return false;
         }
         return true;
       })

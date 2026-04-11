@@ -1,6 +1,7 @@
 import { RiskBadge } from "@/components/shared/RiskBadge";
 import { SparklineChart } from "@/components/shared/SparklineChart";
 import { StatCard } from "@/components/shared/StatCard";
+import { useThresholds } from "@/context/ThresholdContext";
 import {
   usePortfolioSnapshot,
   usePortfolioTrend,
@@ -521,7 +522,8 @@ function SectionHeader({
 export default function Dashboard() {
   const snapshotQuery = usePortfolioSnapshot();
   const suppliersQuery = useSupplierProfiles();
-  const alertsQuery = useRiskAlerts(60);
+  const { compositeThreshold } = useThresholds();
+  const alertsQuery = useRiskAlerts(compositeThreshold);
   const trendQuery = usePortfolioTrend(30);
 
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());

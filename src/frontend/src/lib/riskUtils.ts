@@ -1,36 +1,41 @@
 import type { RiskLevel } from "@/types";
 
+/**
+ * All risk classification functions operate on a 0–100 scale.
+ * Thresholds: >70 = HIGH (red), 41–70 = MID (yellow), 0–40 = LOW (green)
+ */
+
 /** Returns Tailwind text class based on risk score 0-100 */
 export function getRiskColor(score: number): string {
-  if (score >= 70) return "text-destructive";
-  if (score >= 40) return "text-warning";
+  if (score > 70) return "text-destructive";
+  if (score > 40) return "text-warning";
   return "text-success";
 }
 
 /** Returns Tailwind bg class based on risk score 0-100 */
 export function getRiskBgColor(score: number): string {
-  if (score >= 70)
+  if (score > 70)
     return "bg-destructive/15 text-destructive border-destructive/30";
-  if (score >= 40) return "bg-warning/15 text-warning border-warning/30";
+  if (score > 40) return "bg-warning/15 text-warning border-warning/30";
   return "bg-success/15 text-success border-success/30";
 }
 
 /** Returns hex color for chart usage */
 export function getRiskHex(score: number): string {
-  if (score >= 70) return "oklch(0.55 0.2 25)";
-  if (score >= 40) return "oklch(0.75 0.15 85)";
+  if (score > 70) return "oklch(0.55 0.2 25)";
+  if (score > 40) return "oklch(0.75 0.15 85)";
   return "oklch(0.65 0.18 145)";
 }
 
 export function getRiskLevel(score: number): RiskLevel {
-  if (score >= 70) return "high";
-  if (score >= 40) return "medium";
+  if (score > 70) return "high";
+  if (score > 40) return "medium";
   return "low";
 }
 
 export function getRiskLabel(score: number): string {
-  if (score >= 70) return "HIGH";
-  if (score >= 40) return "MED";
+  if (score > 70) return "HIGH";
+  if (score > 40) return "MID";
   return "LOW";
 }
 

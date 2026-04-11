@@ -2,16 +2,12 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { type RiskThresholds, useThresholds } from "@/context/ThresholdContext";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-interface RiskThresholds {
-  quality: number;
-  delay: number;
-  failure: number;
-}
 
 interface NotificationPrefs {
   emailAlerts: boolean;
@@ -173,15 +169,22 @@ function NotifRow({
 // ─── Settings Page ────────────────────────────────────────────────────────────
 
 export default function Settings() {
-  const [settings, setSettings] = useState<AppSettings>(loadSettings);
+  const { thresholds: ctxThresholds, setThresholds: setCtxThresholds } =
+    useThresholds();
+  const queryClient = useQueryClient();
+  const [settings, setSettings] = useState<AppSettings>(() => {
+    const loaded = loadSettings();
+    // Sync initial thresholds from context (which reads from localStorage)
+    return { ...loaded, thresholds: ctxThresholds };
+  });
   const [dirty, setDirty] = useState(false);
 
   function updateThreshold(key: keyof RiskThresholds, value: number) {
     setDirty(true);
-    setSettings((prev) => ({
-      ...prev,
-      thresholds: { ...prev.thresholds, [key]: value },
-    }));
+    const newThresholds = { ...settings.thresholds, [key]: value };
+    setSettings((prev) => ({ ...prev, thresholds: newThresholds }));
+    // Immediately update context so risk alerts re-query in real time
+    setCtxThresholds(newThresholds);
   }
 
   function updateNotif(key: keyof NotificationPrefs, value: boolean) {
@@ -194,6 +197,8 @@ export default function Settings() {
 
   function handleSave() {
     persistSettings(settings);
+    setCtxThresholds(settings.thresholds);
+    queryClient.invalidateQueries({ queryKey: ["risk-alerts"] });
     setDirty(false);
     toast.success("Settings saved", {
       description: "Your preferences have been persisted to this browser.",
@@ -204,6 +209,8 @@ export default function Settings() {
   function handleReset() {
     setSettings(DEFAULT_SETTINGS);
     persistSettings(DEFAULT_SETTINGS);
+    setCtxThresholds(DEFAULT_SETTINGS.thresholds);
+    queryClient.invalidateQueries({ queryKey: ["risk-alerts"] });
     setDirty(false);
     toast("Settings reset", {
       description: "Defaults restored.",

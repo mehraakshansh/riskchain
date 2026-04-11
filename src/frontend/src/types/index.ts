@@ -102,3 +102,8 @@ export type SupplierCategory =
   | { Logistics: null }
   | { Manufacturing: null }
   | { Services: null };
+
+export interface SupplyNetworkGraph {
+  nodes: NetworkNode[];
+  edgeCount: bigint;
+}

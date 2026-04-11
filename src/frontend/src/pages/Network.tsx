@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useSupplierProfiles } from "@/hooks/useBackend";
+import { useSupplierProfiles, useSupplyNetworkGraph } from "@/hooks/useBackend";
 import { formatRiskScore, getRiskHex, normalizeRisk } from "@/lib/riskUtils";
 import type { NetworkNode, SupplierProfile } from "@/types";
 import {
@@ -342,7 +342,11 @@ function RiskBar({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function Network() {
-  const { data: suppliers = [], isLoading } = useSupplierProfiles();
+  const { data: suppliers = [], isLoading: suppliersLoading } =
+    useSupplierProfiles();
+  const { data: graphData, isLoading: graphLoading } = useSupplyNetworkGraph();
+
+  const isLoading = suppliersLoading || graphLoading;
 
   const [tierFilter, setTierFilter] = useState<number | null>(null);
   const [highlightHigh, setHighlightHigh] = useState(false);
@@ -354,10 +358,45 @@ export default function Network() {
   const dragStart = useRef({ x: 0, y: 0, tx: 0, ty: 0 });
   const svgRef = useRef<SVGSVGElement | null>(null);
 
-  const networkNodes = useMemo(
-    () => suppliersToNetworkNodes(suppliers),
-    [suppliers],
-  );
+  // Handle tier filter change — reset selected node to avoid stale selection
+  const handleTierFilter = useCallback((t: number | null) => {
+    setTierFilter(t);
+    setSelectedNode(null);
+    setTooltip(null);
+  }, []);
+
+  // Merge real backend graph nodes with supplier profile data.
+  // Backend NetworkNode uses SupplierTier enum ("Tier1","Tier2","Tier3");
+  // convert to numeric tier for layout.
+  const networkNodes = useMemo<NetworkNode[]>(() => {
+    const backendNodes = graphData?.nodes ?? [];
+    if (backendNodes.length > 0) {
+      return backendNodes.map((n) => {
+        const tierNum =
+          typeof n.tier === "number"
+            ? n.tier
+            : n.tier === "Tier1" || n.tier === 1
+              ? 1
+              : n.tier === "Tier2" || n.tier === 2
+                ? 2
+                : 3;
+        return {
+          supplierId: n.supplierId,
+          supplierName: n.supplierName,
+          tier: tierNum,
+          category:
+            typeof n.category === "string"
+              ? n.category
+              : (Object.keys(n.category as object)[0] ?? "Unknown"),
+          compositeRisk: n.compositeRisk,
+          dependsOn: n.dependsOn,
+        } satisfies NetworkNode;
+      });
+    }
+    // Fallback: synthesize from supplier profiles
+    return suppliersToNetworkNodes(suppliers);
+  }, [graphData, suppliers]);
+
   const positionedNodes = useMemo(
     () => computeLayout(networkNodes),
     [networkNodes],
@@ -499,7 +538,7 @@ export default function Network() {
               variant={tierFilter === t ? "default" : "outline"}
               size="sm"
               className="h-6 text-[10px] font-mono px-2"
-              onClick={() => setTierFilter(t)}
+              onClick={() => handleTierFilter(t)}
               data-ocid={`filter-tier-${t === null ? "all" : t}`}
             >
               {t === null ? "ALL" : `T${t} (${tierCounts[t] ?? 0})`}
@@ -739,7 +778,7 @@ export default function Network() {
                 const rScore = normalizeRisk(node.compositeRisk) * 100;
                 const fillColor = getRiskHex(rScore);
                 const ringW = RING_W[node.tier] ?? 1.5;
-                const isDimmed = highlightHigh && rScore < 70 && !isSelected;
+                const isDimmed = highlightHigh && rScore <= 70 && !isSelected;
 
                 return (
                   <g
@@ -775,7 +814,7 @@ export default function Network() {
                       strokeWidth={ringW}
                       opacity={isDimmed ? 0.2 : 1}
                     />
-                    {rScore >= 70 && !isDimmed && (
+                    {rScore > 70 && !isDimmed && (
                       <circle
                         cx={node.x}
                         cy={node.y}
@@ -831,22 +870,22 @@ export default function Network() {
               {
                 label: "High Risk",
                 value: positionedNodes.filter(
-                  (n) => normalizeRisk(n.compositeRisk) >= 0.7,
+                  (n) => Number(n.compositeRisk) > 70,
                 ).length,
                 color: "oklch(0.55 0.2 25)",
               },
               {
                 label: "Med Risk",
                 value: positionedNodes.filter((n) => {
-                  const r = normalizeRisk(n.compositeRisk);
-                  return r >= 0.4 && r < 0.7;
+                  const r = Number(n.compositeRisk);
+                  return r >= 41 && r <= 70;
                 }).length,
                 color: "oklch(0.75 0.15 85)",
               },
               {
                 label: "Low Risk",
                 value: positionedNodes.filter(
-                  (n) => normalizeRisk(n.compositeRisk) < 0.4,
+                  (n) => Number(n.compositeRisk) <= 40,
                 ).length,
                 color: "oklch(0.65 0.18 145)",
               },
